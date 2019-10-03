@@ -16,8 +16,9 @@ include("grasp.jl")
 # Setting the data
 fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/didactic.dat"
 fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/didactic.dat"
+fname3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data/didactic.dat"
 #fname = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/solveSPPv2/Data/pb_1000rnd0700.dat"  # path for a standard config on macOS
-cost, matrix = loadSPP(fname1)
+cost, matrix = loadSPP(fname3)
 
 #println("GLPK")
 # Proceeding to the optimization
@@ -48,10 +49,12 @@ cost, matrix = loadSPP(fname1)
 # Collecting the names of instances to solve
 target1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data"
 target2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data"            # path for a standard config on macOS
-fnames = getfname(target1)
+target3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data"
+fnames = getfname(target3)
 cd("..")
 @time begin
-z, x = greedyRondomizedConstruction(0.7,cost, matrix)
+#z, x = greedyRandomizedConstruction(0.7,cost, matrix)
+z,x = graspTime(0.5,10,cost,matrix)
 end
 println(z)
 

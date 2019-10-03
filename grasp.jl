@@ -49,10 +49,25 @@ end
 function grasp(alpha, nIter, cost, M)
 
     for i=1:nIter
-        z, x = greedyRandomizedConstruction(alpha, cost, u, M)
+        z, x = greedyRandomizedConstruction(alpha, cost, M)
         newz, newx = localSearchImprovement(z, x, cost, M)
     end
     return newz, newx
+end
+
+function graspTime(alpha, nbSecondes, cost, M)
+    debut=time()
+    temps=0
+    while temps < nbSecondes
+        z, x = greedyRandomizedConstruction(alpha, cost, M)
+        #newz, newx = localSearchImprovement(z, x, cost, M)
+        newz, newx = z,x
+        println(z,x)
+        maintenant=time()
+        temps=maintenant-debut
+    end
+    return newz, newx
+    #return z, x
 end
 
 function calculUtil(cost, M)
@@ -70,7 +85,7 @@ function calculUtil(cost, M)
     return u
 end
 
-function greedyRondomizedConstruction(alpha, cost, M)
+function greedyRandomizedConstruction(alpha, cost, M)
     m, n = size(M)
     cand = Array{Int64}(undef,n) # liste des candidats, on s'interesse à ceux entre 1 et nCand
     # initialisation de cand
@@ -85,7 +100,6 @@ function greedyRondomizedConstruction(alpha, cost, M)
 
         #Build RCL, the restricted candidate list
         min, max = minMaxUtil(util, cand, nCand)
-        print(min,max,alpha)
         limit= min + alpha* (max - min)
         rcl = buildRcl(util, cand, nCand, limit)
 
