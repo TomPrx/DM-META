@@ -18,14 +18,14 @@ end
 
 function minMaxUtil(util, cand, nCand) # return the min and max utility of cand between 1and nCand
     # util[cand[1]] is the utility of the candidate 1
-    min = util[cand[1]]
-    max = util[cand[1]]
+    min = util[cand[1]][1]
+    max = util[cand[1]][1]
     for i = 2:nCand
-        if min > util[cand[i]] 
-            min = util[cand[i]]
+        if min > util[cand[i]][1]
+            min = util[cand[i]][1]
         end
-        if max < util[cand[i]]
-            max = util[cand[i]]
+        if max < util[cand[i]][1]
+            max = util[cand[i]][1]
         end
     end
     return min, max
@@ -35,7 +35,7 @@ function buildRcl(util, cand, nCand, limit) # Return the rcl from the utilities 
 # cand[1] and cand[nCand]
     rcl = []
     for i=1:nCand
-        if util[cand[i]] >= limit
+        if util[cand[i]][1] >= limit
             push!(rcl, cand[i])
         end
     end
@@ -56,7 +56,7 @@ function grasp(alpha, nIter, cost, M)
 end
 
 
-function greedyRondomizedConstruction(alpha, cost, M)
+function greedyRondomizedConstruction(alpha, cost, M,non)
     candidates = Array{Int64}(undef,n)
     for i=1:n
         candidates[i]= i
@@ -94,11 +94,12 @@ function greedyRondomizedConstruction(alpha, cost, M)
     end
 end
 
-function calculUtil(cost, m)
+function calculUtil(cost, M)
+    m,n=size(M)
     occ= zeros(n)
     for i=1:n
         for j=1:m
-            occ[i]+= B[j,i]
+            occ[i]+= M[j,i]
         end
     end
     u= Array{Tuple{Float64,Int64}}(undef,n)
@@ -123,6 +124,7 @@ function greedyRondomizedConstruction(alpha, cost, M)
 
         #Build RCL, the restricted candidate list      
         min, max = minMaxUtil(util, cand, nCand)
+        print(min,max,alpha)
         limit= min + alpha* (max - min)
         rcl = buildRcl(util, cand, nCand, limit)
 
