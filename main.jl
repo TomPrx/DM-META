@@ -14,9 +14,10 @@ include("grasp.jl")
 # =========================================================================== #
 
 # Setting the data
-fname = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/didactic.dat"
+fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/didactic.dat"
+fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/didactic.dat"
 #fname = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/solveSPPv2/Data/pb_1000rnd0700.dat"  # path for a standard config on macOS
-cost, matrix = loadSPP(fname)
+cost, matrix = loadSPP(fname1)
 
 #println("GLPK")
 # Proceeding to the optimization
@@ -45,12 +46,12 @@ cost, matrix = loadSPP(fname)
 # =========================================================================== #
 
 # Collecting the names of instances to solve
-#target = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/solveSPPv2/Data"
-target = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data"            # path for a standard config on macOS
-fnames = getfname(target)
+target1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data"
+target2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data"            # path for a standard config on macOS
+fnames = getfname(target1)
 cd("..")
 @time begin
-z, x, full, pack= greedyRondomizedConstruction(0.7,cost, matrix)
+z, x = greedyRondomizedConstruction(0.7,cost, matrix)
 end
 println(z)
 

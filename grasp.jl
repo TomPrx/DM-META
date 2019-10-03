@@ -48,50 +48,11 @@ end
 
 function grasp(alpha, nIter, cost, M)
 
-    for i=1:nIter 
+    for i=1:nIter
         z, x = greedyRandomizedConstruction(alpha, cost, u, M)
         newz, newx = localSearchImprovement(z, x, cost, M)
     end
     return newz, newx
-end
-
-
-function greedyRondomizedConstruction(alpha, cost, M,non)
-    candidates = Array{Int64}(undef,n)
-    for i=1:n
-        candidates[i]= i
-    end
-    for i=1:n
-        for j=1:m
-            occ[i]+= B[j,i]
-        end
-    end
-    utility= Array{Tuple{Float64,Int64}}(undef,n)
-    for i=1:n
-        utility[i]= (cost[i] / occ[i], i)
-    end
-    sort!(utility, rev=true)    
-    m, n = size(M)
-    z= 0 
-    x= zeros(n)
-
-    while length(candidates) > 0
-        max = utility[1][1]
-        min = utility[length(utility)][1]
-        limit= min + alpha* (max - min)
-        i= 1
-        rcl = []
-        while utility[i][1] >= limit 
-            push!(rcl, utility[i][2]) 
-            i+= 1
-        end
-        e= rcl[rand(1:(length(rcl)),1)[1]]
-        x[e]= 1
-        z+= cost[e]
-        #update candidates
-        candidates = remove!(candidates,e)
-        
-    end
 end
 
 function calculUtil(cost, M)
@@ -120,9 +81,9 @@ function greedyRondomizedConstruction(alpha, cost, M)
     z = 0 # initialisation de la fonction objectif
     x = zeros(n) # initialisation des objets
     util = calculUtil(cost, M)
-    while nCand > 0   
+    while nCand > 0
 
-        #Build RCL, the restricted candidate list      
+        #Build RCL, the restricted candidate list
         min, max = minMaxUtil(util, cand, nCand)
         print(min,max,alpha)
         limit= min + alpha* (max - min)
@@ -134,7 +95,7 @@ function greedyRondomizedConstruction(alpha, cost, M)
         # Incorporate e into the solution
         x[elem] = 1
         z+= cost[elem]
-        
+
         # Update the candidate set C
         i= 1
         while cand[i] != elem
@@ -146,11 +107,11 @@ function greedyRondomizedConstruction(alpha, cost, M)
         nCand = nCand - 1
 
         # parcourt des contraintes dans la colonne de l'objet ajoute
-        for i=1:m 
+        for i=1:m
             # test si l'objet ajoute apparait dans la contrainte
             if M[i,elem] == 1
                 # parcourt des objets d'une contrainte (si l'objet ajoute apparait)
-                for j=1:n 
+                for j=1:n
                     if M[i,j] == 1
                         # on retire l'objet j des candidats
                         k= 1
@@ -164,8 +125,9 @@ function greedyRondomizedConstruction(alpha, cost, M)
                             nCand = nCand - 1
                         end
                     end
-                end            
+                end
             end
         end
     end
+    return z, x
 end
