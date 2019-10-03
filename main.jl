@@ -14,11 +14,11 @@ include("grasp.jl")
 # =========================================================================== #
 
 # Setting the data
-fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/didactic.dat"
+fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/pb_1000rnd0700.dat"
 fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/didactic.dat"
 fname3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data/didactic.dat"
 #fname = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/solveSPPv2/Data/pb_1000rnd0700.dat"  # path for a standard config on macOS
-cost, matrix = loadSPP(fname3)
+cost, matrix = loadSPP(fname1)
 
 #println("GLPK")
 # Proceeding to the optimization
@@ -50,7 +50,7 @@ cost, matrix = loadSPP(fname3)
 target1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data"
 target2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data"            # path for a standard config on macOS
 target3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data"
-fnames = getfname(target3)
+fnames = getfname(target1)
 cd("..")
 @time begin
 #z, x = greedyRandomizedConstruction(0.7,cost, matrix)
@@ -60,11 +60,11 @@ println(z)
 
 #
 #@time begin
-#    z, x, full, pack = amelioration(z, x, full, pack, matrix, 1)
+#    z, x, full, pack = amelioration(z, x, full, pack, cost, matrix, 1)
 #end
 #println(z)
 
 #@time begin
-#    z, x, full, pack = amelioration(z, x, full, pack, matrix,2)
+#    z, x, full, pack = amelioration(z, x, full, pack, cost, matrix,2)
 #end
 #println(z)

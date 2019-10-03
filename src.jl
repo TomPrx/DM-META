@@ -110,7 +110,7 @@ function OneOneMove(z, x , full, pack, cost, M)
 end
 
 
-function amelioration(z, x, full, pack, M,move)
+function amelioration(z, x, full, pack, cost, M,move)
     m, n = size(M)
     #newz, x, full, pack= oneonemove2(z, x , full, pack, cost, M)
     if move==1
@@ -136,7 +136,7 @@ function amelioration(z, x, full, pack, M,move)
     return newz, x, full, pack
 end
 
-# explore le voisinage de la solution x en descente profonde avec un mouvement 0-1 
+# explore le voisinage de la solution x en descente profonde avec un mouvement 0-1
 function zerone(z,x,full,pack,cost,M)
     m,n=size(M)
     copy= full

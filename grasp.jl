@@ -55,19 +55,24 @@ function grasp(alpha, nIter, cost, M)
     return newz, newx
 end
 
+
 function graspTime(alpha, nbSecondes, cost, M)
+    move = 1
     debut=time()
     temps=0
+    z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
+    zbest, xbest = amelioration(z, x, full, pack, cost, M, move)
     while temps < nbSecondes
         z, x = greedyRandomizedConstruction(alpha, cost, M)
-        #newz, newx = localSearchImprovement(z, x, cost, M)
-        newz, newx = z,x
-        println(z,x)
+        newz, newx = amelioration(z, x, full, pack, cost, M, move)
+        if zbest < newz
+            zbest = newz
+            xbest = newx
+        end
         maintenant=time()
         temps=maintenant-debut
     end
-    return newz, newx
-    #return z, x
+    return zbest, xbest
 end
 
 function calculUtil(cost, M)
@@ -96,6 +101,8 @@ function greedyRandomizedConstruction(alpha, cost, M)
     z = 0 # initialisation de la fonction objectif
     x = zeros(n) # initialisation des objets
     util = calculUtil(cost, M)
+    full= zeros(Int64,m)
+    pack = []
     while nCand > 0
 
         #Build RCL, the restricted candidate list
@@ -108,6 +115,7 @@ function greedyRandomizedConstruction(alpha, cost, M)
 
         # Incorporate e into the solution
         x[elem] = 1
+        push!(pack,elem)
         z+= cost[elem]
 
         # Update the candidate set C
@@ -124,6 +132,7 @@ function greedyRandomizedConstruction(alpha, cost, M)
         for i=1:m
             # test si l'objet ajoute apparait dans la contrainte
             if M[i,elem] == 1
+                full[i] = 1
                 # parcourt des objets d'une contrainte (si l'objet ajoute apparait)
                 for j=1:n
                     if M[i,j] == 1
@@ -143,5 +152,5 @@ function greedyRandomizedConstruction(alpha, cost, M)
             end
         end
     end
-    return z, x
+    return z, x, full, pack
 end
