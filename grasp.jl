@@ -60,19 +60,29 @@ function graspTime(alpha, nbSecondes, cost, M)
     move = 1
     debut=time()
     temps=0
+    zmax = []
+    zls = []
+    zinit = []
     z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
-    zbest, xbest = amelioration(z, x, full, pack, cost, M, move)
+    push!(zinit, z)
+    zbest, xbest, full, pack = amelioration(z, x, full, pack, cost, M, move)
+    push!(zls, zbest)
+    push!(zmax, zbest)
     while temps < nbSecondes
-        z, x = greedyRandomizedConstruction(alpha, cost, M)
-        newz, newx = amelioration(z, x, full, pack, cost, M, move)
+        z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
+        push!(zinit, z)
+        newz, newx, full, pack = amelioration(z, x, full, pack, cost, M, move)
+        println(newz - z)
+        push!(zls, newz)
         if zbest < newz
             zbest = newz
             xbest = newx
         end
+        push!(zmax, zbest)
         maintenant=time()
         temps=maintenant-debut
     end
-    return zbest, xbest
+    return zbest, xbest, zinit, zls, zmax
 end
 
 function calculUtil(cost, M)

@@ -10,15 +10,17 @@ include("setSPP.jl")
 include("getfname.jl")
 include("src.jl")
 include("grasp.jl")
+include("experiment.jl")
 
 # =========================================================================== #
 
 # Setting the data
-fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/pb_1000rnd0700.dat"
-fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/didactic.dat"
-fname3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data/didactic.dat"
+iname = "pb_200rnd0700.dat"
+fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/"
+fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/"
+fname3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data/"
 #fname = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/solveSPPv2/Data/pb_1000rnd0700.dat"  # path for a standard config on macOS
-cost, matrix = loadSPP(fname1)
+cost, matrix = loadSPP(string(fname1,iname))
 
 #println("GLPK")
 # Proceeding to the optimization
@@ -54,9 +56,13 @@ fnames = getfname(target1)
 cd("..")
 @time begin
 #z, x = greedyRandomizedConstruction(0.7,cost, matrix)
-z,x = graspTime(0.5,10,cost,matrix)
+z,x, zinit, zls, zbest = graspTime(0.85,1,cost,matrix)
 end
 println(z)
+println(length(zinit))
+println(length(zbest))
+println(length(zls))
+plotRunGrasp(iname,zinit, zls, zbest)
 
 #
 #@time begin
