@@ -15,7 +15,7 @@ include("experiment.jl")
 # =========================================================================== #
 
 # Setting the data
-iname = "pb_200rnd0700.dat"
+iname = "pb_1000rnd0100.dat"
 fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/"
 fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/"
 fname3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data/"
@@ -54,16 +54,16 @@ target2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data"            
 target3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data"
 fnames = getfname(target1)
 cd("..")
-@time begin
+#@time begin
 #z, x = greedyRandomizedConstruction(0.7,cost, matrix)
-z,x, zinit, zls, zbest = graspTime(0.85,1,cost,matrix)
-end
-println(z)
-println(length(zinit))
-println(length(zbest))
-println(length(zls))
-plotRunGrasp(iname,zinit, zls, zbest)
-
+#z,x, zinit, zls, zbest = graspTime(0.85,1,cost,matrix)
+#end
+#println(z)
+#println(length(zinit))
+#println(length(zbest))
+#println(length(zls))
+#plotRunGrasp(iname,zinit, zls, zbest)
+simulation(cost, matrix)
 #
 #@time begin
 #    z, x, full, pack = amelioration(z, x, full, pack, cost, matrix, 1)

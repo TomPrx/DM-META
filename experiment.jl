@@ -1,16 +1,21 @@
 # --------------------------------------------------------------------------- #
 # Perform a numerical experiment (with a fake version of GRASP-SPP)
 
-function graspSPP(fname, alpha, nbIterationGrasp)
+include("grasp.jl")
+
+function graspSPP(fname, alpha, nbIterationGrasp, cost, M)
 
     zconstruction = zeros(Int64,nbIterationGrasp)
     zamelioration = zeros(Int64,nbIterationGrasp)
     zbest = zeros(Int64,nbIterationGrasp)
     zbetter=0
+    move= 1
 
     for i=1:nbIterationGrasp
-        zconstruction[i] = rand(15:40) # # livrable du DM2
-        zamelioration[i] = rand(0:10) + zconstruction[i] # livrable du DM2
+        z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
+        zconstruction[i] = z # # livrable du DM2
+        zb, xb, full, pack = amelioration(z, x, full, pack, cost, M, move)
+        zamelioration[i] = zb # livrable du DM2
         zbetter = max(zbetter, zamelioration[i])
         zbest[i] = zbetter
     end
@@ -67,8 +72,8 @@ end
 #Pkg.add("PyPlot") # Mandatory before the first use of this package
 using PyPlot
 
-function simulation()
-    allfinstance      =  ["didactic.txt", "fn2.txt", "fn3.txt", "fnA.txt", "fnX.txt"]
+function simulation(cost, M)
+    allfinstance      =  ["pb_1000rnd0100.dat"]
     nbInstances       =  length(allfinstance)
     nbRunGrasp        =  30   # nombre de fois que la resolution GRASP est repetee
     nbIterationGrasp  =  200  # nombre d'iteration que compte une resolution GRASP
@@ -98,7 +103,7 @@ function simulation()
     cpt = 0
 
     # run non comptabilise (afin de produire le code compile)
-    zinit, zls, zbest = graspSPP(allfinstance[1], 0.5, 1)
+    zinit, zls, zbest = graspSPP(allfinstance[1], 0.5, 1, cost, M)
 
     for instance = 1:nbInstances
         # les instances sont traitees separement
@@ -108,8 +113,8 @@ function simulation()
             # une instance sera resolue nbrungrasp fois
 
             start = time() # demarre le compteur de temps
-            alpha = 0.75
-            zinit, zls, zbest = graspSPP(allfinstance[instance], alpha, nbIterationGrasp)
+            alpha = 0.85
+            zinit, zls, zbest = graspSPP(allfinstance[instance], alpha, nbIterationGrasp, cost, M)
             tutilise = time()-start # arrete et releve le compteur de temps
             cpt+=1; print(cpt%10)
 
