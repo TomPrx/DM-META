@@ -55,6 +55,73 @@ function grasp(alpha, nIter, cost, M)
     return newz, newx
 end
 
+function relativeGraspTime(nbSecondes, cost, M)
+    alphaTab=[0.20,0.50,0.75,0.9,1.0]
+    alphaRand=rand(1:length(alphaTab)) #indice du alpha chosit aléatoirement
+    alphaRand=1
+    alpha=alphaTab[alphaRand]
+    zAvg=zeros(length(alphaTab)) # initialisation des moyennes à 0
+    q=zeros(length(alphaTab)) # initialisation des qk
+    p=zeros(length(alphaTab)) # initialisation des pk : probabilité pour chaque alpha
+    move = 1
+    debut=time()
+    temps=0
+    zmax = []
+    zls = []
+    zinit = []
+    z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
+    push!(zinit, z)
+    zbest, xbest, full, pack = amelioration(z, x, full, pack, cost, M, move)
+    PireZ=zbest
+    MeilleurZ=zbest
+    zSomme=zbest
+    zAvg[alphaRand]=zbest # zAvg est égal aux différentes valeurs de z pour alpha k
+    push!(zls, zbest)
+    push!(zmax, zbest)
+    Nalpha=0
+    while temps < nbSecondes
+        Nalpha=Nalpha+1
+        if (Nalpha%10==0)
+            println("////////////////////")
+            println(Nalpha)
+            println(p)
+            qSomme=0
+            for i in 1:length(alphaTab)
+                average=zAvg[i]/zSomme
+                println(average)
+                q[i]=(average-PireZ)/(MeilleurZ-PireZ)
+                qSomme=qSomme+q[i]
+            end
+            println(qSomme)
+            for i in 1:length(alphaTab)
+                p[i]=q[i]/qSomme
+            end
+            println(p)
+        end
+        z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
+        push!(zinit, z)
+        newz, newx, full, pack = amelioration(z, x, full, pack, cost, M, move)
+        if (newz<PireZ)
+            PireZ=newz
+        end
+        if (newz>MeilleurZ)
+            Meilleur=newz
+        end
+        zSomme=zSomme+newz
+        zAvg[alphaRand]=zAvg[alphaRand]+zbest # que l'on divisera plus tard par zSomme
+        println(newz - z)
+        push!(zls, newz)
+        if zbest < newz
+            zbest = newz
+            xbest = newx
+        end
+        push!(zmax, zbest)
+        maintenant=time()
+        temps=maintenant-debut
+    end
+    return zbest, xbest, zinit, zls, zmax
+end
+
 
 function graspTime(alpha, nbSecondes, cost, M)
     move = 1
