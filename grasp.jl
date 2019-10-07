@@ -59,12 +59,9 @@ end
 
 function relativeGraspTime(nbSecondes, cost, M)
     alphaTab=[0.20,0.50,0.75,0.9,1.0]
-
     alphaIndice=collect(1:length(alphaTab))
-    println("alphaIndice")
     println(alphaIndice)
     alphaRand=rand(1:length(alphaTab)) #indice du alpha chosit aléatoirement
-    alphaRand=1
     alpha=alphaTab[alphaRand]
     zAvg=zeros(length(alphaTab)) # initialisation des moyennes à 0
     q=zeros(length(alphaTab)) # initialisation des qk
@@ -78,16 +75,16 @@ function relativeGraspTime(nbSecondes, cost, M)
     z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
     push!(zinit, z)
     zbest, xbest, full, pack = amelioration(z, x, full, pack, cost, M, move)
-    PireZ=zbest
+    PireZ=z
     MeilleurZ=zbest
-    zSomme=zbest
+    zSomme=0
     zAvg[alphaRand]=zbest # zAvg est égal aux différentes valeurs de z pour alpha k
     push!(zls, zbest)
     push!(zmax, zbest)
     Nalpha=0
     while temps < nbSecondes
         Nalpha=Nalpha+1
-        if (Nalpha%50==0)
+        if (Nalpha%100==0)
             println("////////////////////")
             println("probabilités !")
             println(p)
@@ -96,6 +93,7 @@ function relativeGraspTime(nbSecondes, cost, M)
             for i in 1:length(alphaTab)
                 average=zAvg[i]/zSomme
                 println(zAvg[i])
+                println(zSomme)
                 q[i]=(average-PireZ)/(MeilleurZ-PireZ)
                 println(i)
                 println(q[i])
@@ -116,19 +114,17 @@ function relativeGraspTime(nbSecondes, cost, M)
         z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
         push!(zinit, z)
         newz, newx, full, pack = amelioration(z, x, full, pack, cost, M, move)
-        if (newz<PireZ)
-            PireZ=newz
+        if (z<PireZ)
+            PireZ=z
         end
-        if (newz>MeilleurZ)
-            Meilleur=newz
-        end
-        zSomme=zSomme+newz
+        zSomme=zSomme+1
         zAvg[alphaRand]=zAvg[alphaRand]+zbest # que l'on divisera plus tard par zSomme
         #println(newz - z)
         push!(zls, newz)
         if zbest < newz
             zbest = newz
             xbest = newx
+            MeilleurZ=zbest
         end
         push!(zmax, zbest)
         maintenant=time()
