@@ -15,7 +15,7 @@ include("grasp.jl")
 # =========================================================================== #
 
 # Setting the data
-iname = "pb_200rnd0700.dat"
+iname = "pb_200rnd0200.dat"
 fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/"
 fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/"
 fname3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data/"
@@ -59,10 +59,11 @@ cd("..")
 z,x, zinit, zls, zbest = relativeGraspTime(1,cost,matrix)
 #z,x, zinit, zls, zbest = graspTime(0.85,1,cost,matrix)
 end
-println(z)
-println(length(zinit))
-println(length(zbest))
-println(length(zls))
+#println(z)
+#println(length(zinit))
+#println(length(zbest))
+#println(length(zls))
+
 #plotRunGrasp(iname,zinit, zls, zbest)
 
 #

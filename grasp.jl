@@ -1,3 +1,5 @@
+using StatsBase
+
 function remove!(tab, e)
     new = Array{Int64}(undef,length(tab)-1)
     j= 1
@@ -57,6 +59,10 @@ end
 
 function relativeGraspTime(nbSecondes, cost, M)
     alphaTab=[0.20,0.50,0.75,0.9,1.0]
+
+    alphaIndice=collect(1:length(alphaTab))
+    println("alphaIndice")
+    println(alphaIndice)
     alphaRand=rand(1:length(alphaTab)) #indice du alpha chosit aléatoirement
     alphaRand=1
     alpha=alphaTab[alphaRand]
@@ -81,22 +87,31 @@ function relativeGraspTime(nbSecondes, cost, M)
     Nalpha=0
     while temps < nbSecondes
         Nalpha=Nalpha+1
-        if (Nalpha%10==0)
+        if (Nalpha%50==0)
             println("////////////////////")
-            println(Nalpha)
+            println("probabilités !")
             println(p)
             qSomme=0
+            println("Moyenne / CPT")
             for i in 1:length(alphaTab)
                 average=zAvg[i]/zSomme
-                println(average)
+                println(zAvg[i])
                 q[i]=(average-PireZ)/(MeilleurZ-PireZ)
+                println(i)
+                println(q[i])
                 qSomme=qSomme+q[i]
             end
+            println("SOMME DES Q")
             println(qSomme)
             for i in 1:length(alphaTab)
                 p[i]=q[i]/qSomme
             end
+            println("probabilités !")
             println(p)
+            alphaRand=sample(alphaIndice, Weights(p))
+            alpha=alphaTab[alphaRand]
+            println("Nouveau Alpha !")
+            println(alpha)
         end
         z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
         push!(zinit, z)
@@ -109,7 +124,7 @@ function relativeGraspTime(nbSecondes, cost, M)
         end
         zSomme=zSomme+newz
         zAvg[alphaRand]=zAvg[alphaRand]+zbest # que l'on divisera plus tard par zSomme
-        println(newz - z)
+        #println(newz - z)
         push!(zls, newz)
         if zbest < newz
             zbest = newz
