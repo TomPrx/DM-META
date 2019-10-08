@@ -136,6 +136,71 @@ function reactiveGraspTime(nbSecondes, cost, M)
     return zbest, xbest, zinit, zls, zmax
 end
 
+function reactiveGraspIter(nbIter, cost, M)
+    alphaTab=[0.20,0.50,0.6,0.75,0.9]
+    alphaIndice=collect(1:length(alphaTab))
+    alphaRand=rand(1:length(alphaTab)) #indice du alpha chosit aléatoirement
+    alpha=alphaTab[alphaRand]
+    zAvg=zeros(length(alphaTab)) # initialisation des moyennes à 0
+    q=zeros(length(alphaTab)) # initialisation des qk
+    p=[0.2,0.2,0.2,0.2,0.2] # initialisation des pk : probabilité pour chaque alpha
+    move = 1
+    debut=time()
+    temps=0
+    zinit = zeros(Int64,nbIter)
+    zls = zeros(Int64,nbIter)
+    zmax = zeros(Int64,nbIter)
+    z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
+    zinit[1] = z
+    zbest, xbest, full, pack = amelioration(z, x, full, pack, cost, M, move)
+    PireZ=z
+    MeilleurZ=zbest
+    zSomme=zeros(length(alphaTab))
+    zAvg[alphaRand]=zbest # zAvg est égal aux différentes valeurs de z pour alpha k
+    zls[1]= zbest
+    zmax[1]= zbest
+    Nalpha=0
+    cpt = 1
+    zsum = zbest
+    for iter = 2:nbIter
+        cpt+= 1
+        Nalpha=Nalpha+1
+        if (Nalpha%20==0)
+            qSomme=0
+            for i in 1:length(alphaTab)
+                average=zAvg[i]/zSomme[i]
+                q[i]=(average-PireZ)/(MeilleurZ-PireZ)
+                qSomme=qSomme+q[i]
+            end
+            for i in 1:length(alphaTab)
+                p[i]=q[i]/qSomme
+            end
+            alphaRand=sample(alphaIndice, Weights(p))
+            alpha=alphaTab[alphaRand]
+        end
+        alphaRand=sample(alphaIndice, Weights(p))
+        alpha=alphaTab[alphaRand]
+        z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
+        zinit[iter] = z
+        newz, newx, full, pack = amelioration(z, x, full, pack, cost, M, move)
+        zsum+= newz
+        if (z<PireZ)
+            PireZ=z
+        end
+        zAvg[alphaRand]=zAvg[alphaRand]+newz # que l'on divisera plus tard par zSomme
+        zSomme[alphaRand] += 1
+        zls[iter] = newz
+        if zbest < newz
+            zbest = newz
+            xbest = newx
+            MeilleurZ=zbest
+        end
+        zmax[iter] = zbest
+    end
+    zsum = (zsum/cpt)
+    println(p)
+    return zbest, xbest, zinit, zls, zmax, zsum
+end
 
 function graspTime(alpha, nbSecondes, cost, M)
     move = 1
@@ -146,9 +211,9 @@ function graspTime(alpha, nbSecondes, cost, M)
     zinit = []
     z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
     push!(zinit, z)
-    zbest, xbest, full, pack = amelioration(z, x, full, pack, cost, M, move)
-    push!(zls, zbest)
-    push!(zmax, zbest)
+    newz, xbest, full, pack = amelioration(z, x, full, pack, cost, M, move)
+    push!(zls, newz)
+    push!(zmax, newz)
     while temps < nbSecondes
         z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
         push!(zinit, z)
@@ -244,5 +309,6 @@ function greedyRandomizedConstruction(alpha, cost, M)
             end
         end
     end
-    return z, x, full, pack
+    #println(sum(full))
+    return z, x, copy(full), copy(pack)
 end

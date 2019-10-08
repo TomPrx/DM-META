@@ -16,6 +16,7 @@ function graspSPP(fname, alpha, nbIterationGrasp, cost, M)
         zconstruction[i] = z # # livrable du DM2
         zb, xb, full, pack = amelioration(z, x, full, pack, cost, M, move)
         zamelioration[i] = zb # livrable du DM2
+        println(z - zb)
         zbetter = max(zbetter, zamelioration[i])
         zbest[i] = zbetter
     end
@@ -54,15 +55,15 @@ function plotAnalyseGrasp(iname, x, zmoy, zmin, zmax)
     legend(loc=4, fontsize ="small")
 end
 
-function plotCPUt(allfinstance, tmoy)
+function plotCPUt(allinstance, tmoy)
     figure("bilan CPUt tous runs",figsize=(6,6)) # Create a new figure
     title("GRASP-SPP | tMoy")
     ylabel("CPUt moyen (s)")
 
-    xticks(collect(1:length(allfinstance)), allfinstance, rotation=60, ha="right")
+    xticks(collect(1:length(allinstance)), allinstance, rotation=60, ha="right")
     margins(0.15)
     subplots_adjust(bottom=0.15,left=0.21)
-    plot(collect(1:length(allfinstance)),tmoy,linestyle="--", lw=0.5, marker="o", ms=4, color="blue", label="tMoy")
+    plot(collect(1:length(allinstance)),tmoy,linestyle="--", lw=0.5, marker="o", ms=4, color="blue", label="tMoy")
     legend(loc=4, fontsize ="small")
 end
 
@@ -72,10 +73,13 @@ end
 #Pkg.add("PyPlot") # Mandatory before the first use of this package
 using PyPlot
 
-function simulation(cost, M)
-    allfinstance      =  ["pb_1000rnd0100.dat"]
-    nbInstances       =  length(allfinstance)
-    nbRunGrasp        =  3   # nombre de fois que la resolution GRASP est repetee
+function simulation()
+    #allinstance      =  ["pb_1000rnd0100.dat","pb_200rnd1500.dat", "pb_2000rnd0500.dat", "pb_100rnd1000.dat"]
+    allinstance = ["didactic.dat", "pb_1000rnd0100.dat", "pb_100rnd0500.dat", "pb_2000rnd0100.dat", "pb_200rnd0100.dat",
+                    "pb_2000rnd0700.dat", "pb_200rnd1300.dat", "pb_500rnd0100.dat", "pb_500rnd0700.dat", "pb_100rnd0100.dat", "pb_1000rnd0700.dat"]
+    res = [30, 67, 639, 40, 416, 1004, 571, 323, 1141, 372, 2260]
+    nbInstances       =  length(allinstance)
+    nbRunGrasp        =  5   # nombre de fois que la resolution GRASP est repetee
     nbIterationGrasp  =  100  # nombre d'iteration que compte une resolution GRASP
     nbDivisionRun     =  10   # nombre de division que compte une resolution GRASP
 
@@ -101,23 +105,28 @@ function simulation(cost, M)
     println("  nbDivisionRun     = ", nbDivisionRun)
     println(" ")
     cpt = 0
-
+    fname1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Data/"
     # run non comptabilise (afin de produire le code compile)
-    zinit, zls, zbest = graspSPP(allfinstance[1], 0.85, 1, cost, M)
-
+    #graspSPP(allinstance[1], 0.85, 1, cost, M)
+zbetter = zeros(nbInstances)
     for instance = 1:nbInstances
         # les instances sont traitees separement
-
-        print("  ",allfinstance[instance]," : ")
+        cost, M = loadSPP(string(fname1,allinstance[instance]))
+        print("  ",allinstance[instance]," : ")
         for runGrasp = 1:nbRunGrasp
             # une instance sera resolue nbrungrasp fois
 
             start = time() # demarre le compteur de temps
             alpha = 0.2
-            zinit, zls, zbest = graspSPP(allfinstance[instance], alpha, nbIterationGrasp, cost, M)
+            #zinit, zls, zbest = graspSPP(allinstance[instance], alpha, nbIterationGrasp, cost, M)
+            zb, xb, zinit, zls, zbest, zsum = reactiveGraspIter(nbIterationGrasp, cost, M)
+            zbetter[instance] = zb
             tutilise = time()-start # arrete et releve le compteur de temps
             cpt+=1; print(cpt%10)
-
+            #println("zMoy")
+            #println(zsum)
+            println("zMoy%")
+            println(zsum/zb*100)
             # mise a jour des resultats collectes
             for division=1:nbDivisionRun
                 zmax[instance,division] = max(zbest[x[division]], zmax[instance,division])
@@ -131,15 +140,32 @@ function simulation(cost, M)
              zmoy[instance,division] =  zmoy[instance,division] /  nbRunGrasp
         end #division
         tmoy[instance] = tmoy[instance] / nbRunGrasp
-        println(" ")
 
     end #instance
 
     #Pkg.add("PyPlot") # Mandatory before the first use of this package
     println(" ");println("  Graphiques de synthese")
 #    using PyPlot
-    instancenb = 1
-    plotRunGrasp(allfinstance[instancenb], zinit, zls, zbest)
-    plotAnalyseGrasp(allfinstance[instancenb], x, zmoy[instancenb,:], zmin[instancenb,:], zmax[instancenb,:] )
-    plotCPUt(allfinstance, tmoy)
+    for i=1:nbInstances
+    #plotRunGrasp(allinstance[i], zinit, zls, zbest)
+    #plotAnalyseGrasp(allinstance[i], x, zmoy[i,:], zmin[i,:], zmax[i,:] )
+end
+        zperc = zeros(nbInstances)
+        for i=1:nbInstances
+            zperc[i]=zmoy[i,1]
+            for j=1:nbDivisionRun
+                if (zperc[i] < zmoy[i,j])
+                    zperc[i] = zmoy[i,j]
+                end
+            end
+            zperc[i] = zperc[i]/res[i]
+        end
+        println(" ")
+        println("zmoy")
+        println(zmoy)
+        println("tmoy")
+        println(tmoy)
+        println("zperc")
+        println(zperc)
+    plotCPUt(allinstance, tmoy)
 end

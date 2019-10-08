@@ -115,7 +115,7 @@ function amelioration(z, x, full, pack, cost, M,move)
     #newz, x, full, pack= oneonemove2(z, x , full, pack, cost, M)
     if move==1
         #println("Amélioration avec OneOneMove")
-        newz, x, full, pack = OneOneMove(z, x , full, pack, cost, M)
+        newz, x, full, pack = OneOneMove(z, x , copy(full), copy(pack), cost, M)
     else
         println("Amélioration avec zero one")
         newz, x, full, pack = zerone(z, x , full, pack, cost, M)
@@ -126,7 +126,7 @@ function amelioration(z, x, full, pack, cost, M,move)
         #newz, x, full, pack= oneonemove2(z, x , full, pack, cost, M)
         if move==1
             #println("Amélioration avec OneOneMove")
-            newz, x, full, pack = OneOneMove(z, x , full, pack, cost, M)
+            newz, x, full, pack = OneOneMove(z, x , copy(full), copy(pack), cost, M)
         else
             println("Amélioration avec zero one")
             newz, x, full, pack = zerone(z, x , full, pack, cost, M)
