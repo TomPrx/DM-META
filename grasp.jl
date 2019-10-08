@@ -57,7 +57,7 @@ function grasp(alpha, nIter, cost, M)
     return newz, newx
 end
 
-function relativeGraspTime(nbSecondes, cost, M)
+function reactiveGraspTime(nbSecondes, cost, M)
     alphaTab=[0.20,0.50,0.75,0.9,1.0]
     alphaIndice=collect(1:length(alphaTab))
     println(alphaIndice)
@@ -65,7 +65,7 @@ function relativeGraspTime(nbSecondes, cost, M)
     alpha=alphaTab[alphaRand]
     zAvg=zeros(length(alphaTab)) # initialisation des moyennes à 0
     q=zeros(length(alphaTab)) # initialisation des qk
-    p=zeros(length(alphaTab)) # initialisation des pk : probabilité pour chaque alpha
+    p=[0.2,0.2,0.2,0.2,0.2] # initialisation des pk : probabilité pour chaque alpha
     move = 1
     debut=time()
     temps=0
@@ -77,26 +77,27 @@ function relativeGraspTime(nbSecondes, cost, M)
     zbest, xbest, full, pack = amelioration(z, x, full, pack, cost, M, move)
     PireZ=z
     MeilleurZ=zbest
-    zSomme=0
+    zSomme=zeros(length(alphaTab))
     zAvg[alphaRand]=zbest # zAvg est égal aux différentes valeurs de z pour alpha k
     push!(zls, zbest)
     push!(zmax, zbest)
     Nalpha=0
     while temps < nbSecondes
         Nalpha=Nalpha+1
-        if (Nalpha%100==0)
+        if (Nalpha%20==0)
             println("////////////////////")
             println("probabilités !")
             println(p)
             qSomme=0
             println("Moyenne / CPT")
             for i in 1:length(alphaTab)
-                average=zAvg[i]/zSomme
+                average=zAvg[i]/zSomme[i]
                 println(zAvg[i])
                 println(zSomme)
                 q[i]=(average-PireZ)/(MeilleurZ-PireZ)
                 println(i)
-                println(q[i])
+                println("q")
+                println(q)
                 qSomme=qSomme+q[i]
             end
             println("SOMME DES Q")
@@ -106,20 +107,22 @@ function relativeGraspTime(nbSecondes, cost, M)
             end
             println("probabilités !")
             println(p)
+            println(sum(p))
             alphaRand=sample(alphaIndice, Weights(p))
             alpha=alphaTab[alphaRand]
             println("Nouveau Alpha !")
             println(alpha)
         end
+        alphaRand=sample(alphaIndice, Weights(p))
+        alpha=alphaTab[alphaRand]
         z, x, full, pack = greedyRandomizedConstruction(alpha, cost, M)
         push!(zinit, z)
         newz, newx, full, pack = amelioration(z, x, full, pack, cost, M, move)
         if (z<PireZ)
             PireZ=z
         end
-        zSomme=zSomme+1
-        zAvg[alphaRand]=zAvg[alphaRand]+zbest # que l'on divisera plus tard par zSomme
-        #println(newz - z)
+        zAvg[alphaRand]=zAvg[alphaRand]+newz # que l'on divisera plus tard par zSomme
+        zSomme[alphaRand] += 1
         push!(zls, newz)
         if zbest < newz
             zbest = newz
@@ -179,6 +182,7 @@ function calculUtil(cost, M)
 end
 
 function greedyRandomizedConstruction(alpha, cost, M)
+    #println("Construction")
     m, n = size(M)
     cand = Array{Int64}(undef,n) # liste des candidats, on s'interesse à ceux entre 1 et nCand
     # initialisation de cand

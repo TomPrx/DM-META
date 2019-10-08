@@ -75,8 +75,8 @@ using PyPlot
 function simulation(cost, M)
     allfinstance      =  ["pb_1000rnd0100.dat"]
     nbInstances       =  length(allfinstance)
-    nbRunGrasp        =  30   # nombre de fois que la resolution GRASP est repetee
-    nbIterationGrasp  =  200  # nombre d'iteration que compte une resolution GRASP
+    nbRunGrasp        =  3   # nombre de fois que la resolution GRASP est repetee
+    nbIterationGrasp  =  100  # nombre d'iteration que compte une resolution GRASP
     nbDivisionRun     =  10   # nombre de division que compte une resolution GRASP
 
     zinit = zeros(Int64, nbIterationGrasp) # zero
@@ -103,7 +103,7 @@ function simulation(cost, M)
     cpt = 0
 
     # run non comptabilise (afin de produire le code compile)
-    zinit, zls, zbest = graspSPP(allfinstance[1], 0.5, 1, cost, M)
+    zinit, zls, zbest = graspSPP(allfinstance[1], 0.85, 1, cost, M)
 
     for instance = 1:nbInstances
         # les instances sont traitees separement
@@ -113,7 +113,7 @@ function simulation(cost, M)
             # une instance sera resolue nbrungrasp fois
 
             start = time() # demarre le compteur de temps
-            alpha = 0.85
+            alpha = 0.2
             zinit, zls, zbest = graspSPP(allfinstance[instance], alpha, nbIterationGrasp, cost, M)
             tutilise = time()-start # arrete et releve le compteur de temps
             cpt+=1; print(cpt%10)
