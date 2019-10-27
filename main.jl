@@ -22,7 +22,7 @@ fname2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data/"
 fname3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data/"
 fname4 = "/comptes/E165088T/Documents/TPinfo/Metaheuristiques/DM-META/Data/"
 #fname = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/solveSPPv2/Data/pb_1000rnd0700.dat"  # path for a standard config on macOS
-cost, matrix = loadSPP(string(fname1,iname))
+cost, matrix = loadSPP(string(fname3,iname))
 
 #println("GLPK")
 # Proceeding to the optimization
@@ -55,7 +55,7 @@ target1 = "F:/Users/Utilisateur/Documents/TAF/M1/Métaheuristiques/DM/DM-META/Da
 target2 = "/comptes/E15H043L/Documents/M1/S1/Méta/DM2/DM-META/Data"            # path for a standard config on macOS
 target3 = "C:/Users/Théo/Documents/GitHub/DM-META/Data"
 target4 = "/comptes/E165088T/Documents/TPinfo/Metaheuristiques/DM-META/Data"
-fnames = getfname(target1)
+fnames = getfname(target3)
 cd("..")
 #@time begin
 #z, x = greedyRandomizedConstruction(0.7,cost, matrix)
@@ -81,7 +81,7 @@ cd("..")
 #println(z)
 
 @time begin
-    t0 = 100; L = 10; alpha= 0.95; tmin = 1
+    t0 = 100; L = 10; alpha= 0.9; tmin = 1
     sa(t0, L, alpha, tmin, cost, matrix)
 end
 

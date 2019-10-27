@@ -27,6 +27,56 @@ function z(x, cost)
     return zsum
 end
 
+function swap(xCur,zCur,pack,nbPacked,nbUnpacked,cost,M)
+    nbUnpackedRandom = nbUnpacked
+    move = false
+    print(nbPacked,"    ",nbUnpacked)
+    while !move && nbUnpackedRandom > 0
+        rdmAdd = rand((nbPacked+1):(nbPacked+nbUnpackedRandom))
+        rdmDrop = rand(1:nbPacked)
+        print(rdmAdd)
+        print(rdmDrop)
+        obj = pack[rdmAdd]
+        drop = pack[rdmDrop]
+        xSwap=deepcopy(xCur)
+        xSwap[drop] = 0
+        zSwap=zCur-cost[drop]
+        if (canAdd(obj, xSwap, M)) # on peut ajouter l'objet
+            #println("add")
+            xSwap[obj] = 1
+            zSwap += cost[obj]
+            move = true
+            # on échange les objets du swap dans le pack
+            tmp = pack[rdmDrop]
+            pack[rdmDrop] = obj
+            pack[rdmAdd] = tmp
+            move = true
+            xCur=deepcopy(xSwap)
+            zCur=zSwap
+        else
+            # on place le dernier objet selectionne a la fin du tableau
+            tmp = pack[nbPacked+nbUnpackedRandom]
+            pack[nbPacked+nbUnpackedRandom] = pack[rdmAdd]
+            pack[rdmAdd] = tmp
+            nbUnpackedRandom -= 1
+        end
+    end
+    # si move = false, on n'a pas réussi à swap
+    if (!move && nbPacked > 0)
+        #println("drop")
+        rdm = rand(1:nbPacked)
+        obj = pack[rdm]
+        xCur[obj] = 0
+        zCur -= cost[obj]
+        tmp = pack[nbPacked]
+        pack[nbPacked] = obj
+        pack[rdm] = tmp
+        nbPacked -= 1
+        nbUnpacked += 1
+    end
+    return deepcopy(xCur), zCur, deepcopy(pack), nbPacked, nbUnpacked
+end
+
 function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
     nbUnpackedRandom = nbUnpacked
     #nbPackedRandom = nbPacked
@@ -89,7 +139,9 @@ function packs(x) # crée un tableau où
     return packed, nbPacked, nbUnpacked
 end
 
-function saMeta(x0, z0, t0, L, alpha, tmin, cost, M)
+function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
+    move=2
+    cptR=0
     xCur = deepcopy(x0)
     zCur = z0
     xBest = deepcopy(x0)
@@ -104,15 +156,20 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M)
     testx = []
     while t > tmin
         iter += 1
-        newX, newZ, pack, nbPacked, nbUnpacked = addOrElseDrop(copy(xCur), copy(zCur), copy(pack), nbPacked, nbUnpacked, cost, M)
+        if move==1
+            newX, newZ, pack, nbPacked, nbUnpacked = addOrElseDrop(copy(xCur), copy(zCur), copy(pack), nbPacked, nbUnpacked, cost, M)
+        end
+        if move==2
+            newX, newZ, pack, nbPacked, nbUnpacked = swap(copy(xCur), copy(zCur), copy(pack), nbPacked, nbUnpacked, cost, M)
+        end
         push!(allZ, newZ)
         delta = newZ - zCur
         if iter == 1
-        println("delta : $(delta)")
-        println("newZ : $newZ")
-        println("zCur : $(zCur)")
-        push!(testx, zCur - z(xCur,cost))
-    end
+            println("delta : $(delta)")
+            println("newZ : $newZ")
+            println("zCur : $(zCur)")
+            push!(testx, zCur - z(xCur,cost))
+        end
         if ((delta > 0) || (rand() < exp(delta/t))) #  cas (A+ ou A-)
             xCur = deepcopy(newX)
             zCur = newZ
@@ -136,8 +193,13 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M)
             plateau = 0
         end
         plateau += 1
+        if (t<tmin && cptR<nbRechauf)
+            t=tRechauf
+            cptR+=1
+            move=2
+        end
     end
-    println(allZ)
+    #println(allZ)
     println(cpt)
     println(allZ[1])
     println(sum(proba)/length(proba))
@@ -157,7 +219,7 @@ function sa(t0, L, alpha, tmin, cost, M)
     println("Nombre d'objets : $(n)")
     println("Nombre de contraintes : $(m)")
     println("Nombre d'objets packed : $(packed)")
-    xBest, zBest = saMeta(x, z, t0, L, alpha, tmin, cost, M)
+    xBest, zBest = saMeta(x, z, t0, L, alpha, tmin, cost, M,1,100)
     sumz = 0
     for i in 1:n
         sumz += cost[i]*xBest[i]
