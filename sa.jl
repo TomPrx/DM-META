@@ -30,12 +30,9 @@ end
 function swap(xCur,zCur,pack,nbPacked,nbUnpacked,cost,M)
     nbUnpackedRandom = nbUnpacked
     move = false
-    print(nbPacked,"    ",nbUnpacked)
-    while !move && nbUnpackedRandom > 0
+    while !move && nbUnpackedRandom > 0 && nbPacked > 0
         rdmAdd = rand((nbPacked+1):(nbPacked+nbUnpackedRandom))
         rdmDrop = rand(1:nbPacked)
-        print(rdmAdd)
-        print(rdmDrop)
         obj = pack[rdmAdd]
         drop = pack[rdmDrop]
         xSwap=deepcopy(xCur)
@@ -194,9 +191,11 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
         end
         plateau += 1
         if (t<tmin && cptR<nbRechauf)
+            println("réchauffe on change de mouvement !")
             t=tRechauf
             cptR+=1
-            move=2
+            move=1
+            println(cpt)
         end
     end
     #println(allZ)
