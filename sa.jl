@@ -78,6 +78,11 @@ function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
     nbUnpackedRandom = nbUnpacked
     #nbPackedRandom = nbPacked
     move = false
+    zPack=0
+    for i in 1:nbPacked
+        zPack=zPack+cost[pack[i]]
+    end
+    #println("xCur : ",zCur,"    ",xCur," sumPack = ",zPack,"    ",pack, " nbPacked/nbUnpacked = ",nbPacked,"/",nbUnpacked)
     while !move && nbUnpackedRandom > 0
         rdm = rand((nbPacked+1):(nbPacked+nbUnpackedRandom))
         obj = pack[rdm]
@@ -137,7 +142,7 @@ function packs(x) # crée un tableau où
 end
 
 function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
-    move=2
+    move=1
     cptR=0
     xCur = deepcopy(x0)
     zCur = z0
@@ -145,7 +150,7 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
     zBest = z0
     t = t0
     plateau = 1
-    pack, nbPacked, nbUnpacked = packs(x0)
+    packCur, nbPackedCur, nbUnpackedCur = packs(x0)
     allZ = []
     proba = []
     cpt = [0,0,0,0] # A++ A+ A- R
@@ -154,10 +159,20 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
     while t > tmin
         iter += 1
         if move==1
-            newX, newZ, pack, nbPacked, nbUnpacked = addOrElseDrop(copy(xCur), copy(zCur), copy(pack), nbPacked, nbUnpacked, cost, M)
+            newX, newZ, pack, nbPacked, nbUnpacked = addOrElseDrop(copy(xCur), copy(zCur), copy(packCur), nbPackedCur, nbUnpackedCur, cost, M)
+            zPack=0
+            for i in 1:nbPacked
+                zPack=zPack+cost[pack[i]]
+            end
+            #println("add...Drop : newZ = ",newZ," , nbPacked/nbUnpacked = ",nbPacked,"/",nbUnpacked,"   zPack = ",zPack)
         end
         if move==2
-            newX, newZ, pack, nbPacked, nbUnpacked = swap(copy(xCur), copy(zCur), copy(pack), nbPacked, nbUnpacked, cost, M)
+            newX, newZ, pack, nbPacked, nbUnpacked = swap(copy(xCur), copy(zCur), copy(packCur), nbPackedCur, nbUnpackedCur, cost, M)
+            zPack=0
+            for i in 1:nbPacked
+                zPack=zPack+cost[pack[i]]
+            end
+            #println("swap : newZ = ",newZ," , nbPacked/nbUnpacked = ",nbPacked,"/",nbUnpacked,"   zPack = ",zPack)
         end
         push!(allZ, newZ)
         delta = newZ - zCur
@@ -168,6 +183,9 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
             push!(testx, zCur - z(xCur,cost))
         end
         if ((delta > 0) || (rand() < exp(delta/t))) #  cas (A+ ou A-)
+            packCur=deepcopy(pack)
+            nbPackedCur=nbPacked
+            nbUnpackedCur=nbUnpacked
             xCur = deepcopy(newX)
             zCur = newZ
             if (newZ > zBest) # cas A++
@@ -192,9 +210,10 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
         plateau += 1
         if (t<tmin && cptR<nbRechauf)
             println("réchauffe on change de mouvement !")
+            println("zBest = ",zBest)
             t=tRechauf
             cptR+=1
-            move=1
+            move=2
             println(cpt)
         end
     end
