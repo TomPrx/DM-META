@@ -1,4 +1,6 @@
 include("src.jl")
+#using Plots
+using PyPlot
 
 
 function canAdd(obj, xCur, M) # return true if we can add obj to xCur, false otherwise
@@ -141,7 +143,7 @@ function packs(x) # crée un tableau où
     return packed, nbPacked, nbUnpacked
 end
 
-function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
+function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf, optimum)
     move=1
     cptR=0
     xCur = deepcopy(x0)
@@ -156,6 +158,9 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
     cpt = [0,0,0,0] # A++ A+ A- R
     iter = 0
     testx = []
+    allSolutions = []
+    bestSolutions = []
+    allTemp = []
     while t > tmin
         iter += 1
         if move==1
@@ -176,12 +181,6 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
         end
         push!(allZ, newZ)
         delta = newZ - zCur
-        if iter == 1
-            println("delta : $(delta)")
-            println("newZ : $newZ")
-            println("zCur : $(zCur)")
-            push!(testx, zCur - z(xCur,cost))
-        end
         if ((delta > 0) || (rand() < exp(delta/t))) #  cas (A+ ou A-)
             packCur=deepcopy(pack)
             nbPackedCur=nbPacked
@@ -203,6 +202,9 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
         else # cas R
             cpt[4] += 1
         end
+        push!(allSolutions, zCur)
+        push!(bestSolutions, zBest)
+        push!(allTemp, t)
         if (plateau == L)
             t = t*alpha
             plateau = 0
@@ -221,10 +223,11 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf)
     println(cpt)
     println(allZ[1])
     println(sum(proba)/length(proba))
+    plotSa(iter, allSolutions, bestSolutions, allTemp, optimum)
     return xBest, zBest
 end
 
-function sa(t0, L, alpha, tmin, cost, M)
+function sa(t0, L, alpha, tmin, cost, M, optimum)
     z, x, full, pack = construct(cost, M)
     m, n = size(M)
     packed = sum(x)
@@ -237,7 +240,7 @@ function sa(t0, L, alpha, tmin, cost, M)
     println("Nombre d'objets : $(n)")
     println("Nombre de contraintes : $(m)")
     println("Nombre d'objets packed : $(packed)")
-    xBest, zBest = saMeta(x, z, t0, L, alpha, tmin, cost, M,1,100)
+    xBest, zBest = saMeta(x, z, t0, L, alpha, tmin, cost, M,1,100, optimum)
     sumz = 0
     for i in 1:n
         sumz += cost[i]*xBest[i]
@@ -255,4 +258,39 @@ function test()
     println(canAdd(2, x, A))
     println(canAdd(3, x, A))
     println(canAdd(4, x, A))
+end
+
+
+function plotSa(iter, allSolutions, bestSolutions, allTemp, optimum)
+
+    ######xticks([1,convert(Int64,ceil(nPoint/4)),convert(Int64,ceil(nPoint/2)), convert(Int64,ceil(nPoint/4*3)),nPoint])
+    #####plot(x,zbest, linewidth=2.0, color="green", label="meilleures solutions")
+    ####plot(x,zls,ls="",marker="^",ms=2,color="green",label="toutes solutions améliorées")
+    ###plot(x,zinit,ls="",marker=".",ms=2,color="red",label="toutes solutions construites")
+    ##vlines(x, zinit, zls, linewidth=0.5)
+    #legend(loc=4, fontsize ="small")
+
+    println("plot")
+    #Plot solutions
+    figure("SaSolutions",figsize=(6,6))
+    title("SA : allSolutions, bestSolutions, optimalSolution")
+    xlabel("Itérations")
+    ylabel("z")
+    ylim(0, optimum+2)
+    x=collect(1:iter)
+    y=[]
+    for i in 1:iter
+        push!(y,optimum)
+    end
+    plot(x, allSolutions)
+    plot(x, bestSolutions)
+    plot(x, y)
+
+
+    #Plot temperature
+    figure("SaTemperature",figsize=(6,6))
+    title("SA : temperature")
+    xlabel("Itérations")
+    ylabel("z")
+    plot(x, allTemp)
 end
