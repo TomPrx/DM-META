@@ -95,8 +95,9 @@ cd("..")
 #end
 #println(z)
 
+m, n = size(matrix)
 @time begin
-    t0 = 100; L = 10; alpha= 0.9; tmin = 1
+    t0 = 300; L = n*1.5; alpha= 0.95; tmin = 20
     sa(t0, L, alpha, tmin, cost, matrix, optimum)
 end
 

@@ -2,6 +2,26 @@ include("src.jl")
 #using Plots
 using PyPlot
 
+function randomConstruct(cost, M)
+    m, n = size(M)
+    z= 0
+    x = zeros(n)
+    objects = collect(1:n)
+    cpt = n
+    while cpt > 0
+        obj = objects[rand(1:cpt)]
+        if ( canAdd(obj, x, M))
+            x[obj] = 1
+            z += cost[obj]
+            tmp = objects[cpt]
+            objects[cpt] = objects[obj]
+            objects[obj] = tmp
+        end
+        cpt -= 1
+    end
+    return z, x
+end
+
 
 function canAdd(obj, xCur, M) # return true if we can add obj to xCur, false otherwise
     m, n = size(M)
@@ -125,6 +145,42 @@ function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
     return deepcopy(xCur), zCur, deepcopy(pack), nbPacked, nbUnpacked
 end
 
+function oneAddOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
+    move = false
+    if (nbUnpacked > 0)
+        rdm = rand((nbPacked+1):(nbPacked+nbUnpacked))
+        obj = pack[rdm]
+        if (canAdd(obj, xCur, M)) # on peut ajouter l'objet
+            #println("add")
+            xCur[obj] = 1
+            zCur += cost[obj]
+            # on ajoute l'objet à ceux qui sont packed
+            tmp = pack[nbPacked+1]
+            pack[nbPacked+1] = obj
+            # on met à jour la taille du pack
+            nbPacked += 1
+            nbUnpacked -= 1
+            pack[rdm] = tmp
+            move = true
+        end
+    end
+    # si move = false, on n'a reussi à ajouter aucun objet
+    if (!move && nbPacked > 0)
+        #println("drop")
+        rdm = rand(1:nbPacked)
+        obj = pack[rdm]
+        xCur[obj] = 0
+        zCur -= cost[obj]
+        tmp = pack[nbPacked]
+        pack[nbPacked] = obj
+        pack[rdm] = tmp
+        nbPacked -= 1
+        nbUnpacked += 1
+    end
+    return deepcopy(xCur), zCur, deepcopy(pack), nbPacked, nbUnpacked
+end
+
+
 function packs(x) # crée un tableau où
     # les nbPacked 1er objets sont ceux pour lesquels x[i] = 1
     # les nbUnpacked suivants sont ceux pour lesquels x[i] = 0
@@ -165,6 +221,7 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf, optimum
         iter += 1
         if move==1
             newX, newZ, pack, nbPacked, nbUnpacked = addOrElseDrop(copy(xCur), copy(zCur), copy(packCur), nbPackedCur, nbUnpackedCur, cost, M)
+            #newX, newZ, pack, nbPacked, nbUnpacked =  oneAddOrElseDrop(copy(xCur), copy(zCur), copy(packCur), nbPackedCur, nbUnpackedCur, cost, M)
             zPack=0
             for i in 1:nbPacked
                 zPack=zPack+cost[pack[i]]
@@ -228,7 +285,8 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf, optimum
 end
 
 function sa(t0, L, alpha, tmin, cost, M, optimum)
-    z, x, full, pack = construct(cost, M)
+    #z, x, full, pack = construct(cost, M)
+    z, x = randomConstruct(cost, M)
     m, n = size(M)
     packed = sum(x)
     println("Construction : $(z)")
@@ -262,14 +320,6 @@ end
 
 
 function plotSa(iter, allSolutions, bestSolutions, allTemp, optimum)
-
-    ######xticks([1,convert(Int64,ceil(nPoint/4)),convert(Int64,ceil(nPoint/2)), convert(Int64,ceil(nPoint/4*3)),nPoint])
-    #####plot(x,zbest, linewidth=2.0, color="green", label="meilleures solutions")
-    ####plot(x,zls,ls="",marker="^",ms=2,color="green",label="toutes solutions améliorées")
-    ###plot(x,zinit,ls="",marker=".",ms=2,color="red",label="toutes solutions construites")
-    ##vlines(x, zinit, zls, linewidth=0.5)
-    #legend(loc=4, fontsize ="small")
-
     println("plot")
     #Plot solutions
     figure("SaSolutions",figsize=(6,6))
