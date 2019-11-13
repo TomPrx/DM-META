@@ -2,45 +2,6 @@ include("src.jl")
 #using Plots
 using PyPlot
 
-function randomConstruct(cost, M)
-    m, n = size(M)
-    z= 0
-    x = zeros(n)
-    objects = collect(1:n)
-    cpt = n
-    while cpt > 0
-        obj = objects[rand(1:cpt)]
-        if ( canAdd(obj, x, M))
-            x[obj] = 1
-            z += cost[obj]
-            tmp = objects[cpt]
-            objects[cpt] = objects[obj]
-            objects[obj] = tmp
-        end
-        cpt -= 1
-    end
-    return z, x
-end
-
-
-function canAdd(obj, xCur, M) # return true if we can add obj to xCur, false otherwise
-    m, n = size(M)
-    res = true
-    i = 1
-
-    while res && i <= m
-        if (M[i, obj] == 1)
-            j = 1
-            while res && j <= n
-                res = (M[i,j]*xCur[j] == 0)
-                j += 1
-            end
-        end
-        i += 1
-    end
-    return res
-end
-
 function z(x, cost)
     zsum =0
     for i in 1:length(x)
@@ -49,67 +10,92 @@ function z(x, cost)
     return zsum
 end
 
-function swap(xCur,zCur,pack,nbPacked,nbUnpacked,cost,M)
+function swap(xCur,zCur,pack,nbPacked,nbUnpacked, full, cost,M)
     nbUnpackedRandom = nbUnpacked
     move = false
+    m, n = size(M)
+    rap = nbUnpacked / (nbPacked*n*n)
+    prob = rap
+    xSwap=xCur
     while !move && nbUnpackedRandom > 0 && nbPacked > 0
         rdmAdd = rand((nbPacked+1):(nbPacked+nbUnpackedRandom))
-        rdmDrop = rand(1:nbPacked)
         obj = pack[rdmAdd]
-        drop = pack[rdmDrop]
-        xSwap=deepcopy(xCur)
-        xSwap[drop] = 0
-        zSwap=zCur-cost[drop]
-        if (canAdd(obj, xSwap, M)) # on peut ajouter l'objet
-            #println("add")
+        if (tryAdd(obj, full, M)) # on peut ajouter l'objet
             xSwap[obj] = 1
-            zSwap += cost[obj]
+            zCur += cost[obj]
             move = true
+            rdmDrop = rand(1:nbPacked)
+            drop = pack[rdmDrop]
+            xSwap[drop] = 0
+            zCur=zCur-cost[drop]
             # on échange les objets du swap dans le pack
             tmp = pack[rdmDrop]
             pack[rdmDrop] = obj
             pack[rdmAdd] = tmp
+            #mise a jour de full apres le drop
+            for k=1:m
+                if M[k, drop] == 1
+                    full[k] = 0
+                end
+            end
+            #mise a jour de full apres le add
+            for j=1:m
+                if M[j,obj] == 1
+                    full[j] = 1
+                end
+            end
             move = true
-            xCur=deepcopy(xSwap)
-            zCur=zSwap
         else
             # on place le dernier objet selectionne a la fin du tableau
             tmp = pack[nbPacked+nbUnpackedRandom]
             pack[nbPacked+nbUnpackedRandom] = pack[rdmAdd]
             pack[rdmAdd] = tmp
             nbUnpackedRandom -= 1
+            prob = prob + rap*(nbUnpacked - nbUnpackedRandom)
+            if ( rand() < prob)
+                nbUnpackedRandom += 0
+            end
         end
     end
     # si move = false, on n'a pas réussi à swap
     if (!move && nbPacked > 0)
-        #println("drop")
         rdm = rand(1:nbPacked)
-        obj = pack[rdm]
-        xCur[obj] = 0
-        zCur -= cost[obj]
+        drop = pack[rdm]
+        xSwap[drop] = 0
+        zCur -= cost[drop]
         tmp = pack[nbPacked]
-        pack[nbPacked] = obj
+        pack[nbPacked] = drop
         pack[rdm] = tmp
         nbPacked -= 1
         nbUnpacked += 1
+        #mise a jour de full apres le drop
+        for k=1:m
+            if M[k, drop] == 1
+                full[k] = 0
+            end
+        end
     end
-    return deepcopy(xCur), zCur, deepcopy(pack), nbPacked, nbUnpacked
+    return xSwap, zCur, pack, nbPacked, nbUnpacked, full
 end
 
-function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
+function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, full, cost, M)
+    m, n = size(M)
+    rap = nbUnpacked / (nbPacked*n*n)
+    prob = rap
     nbUnpackedRandom = nbUnpacked
     #nbPackedRandom = nbPacked
     move = false
     zPack=0
+    addOrDrop = rand()
     for i in 1:nbPacked
         zPack=zPack+cost[pack[i]]
     end
-    #println("xCur : ",zCur,"    ",xCur," sumPack = ",zPack,"    ",pack, " nbPacked/nbUnpacked = ",nbPacked,"/",nbUnpacked)
+    cpt = 0
     while !move && nbUnpackedRandom > 0
+        cpt +=1
         rdm = rand((nbPacked+1):(nbPacked+nbUnpackedRandom))
         obj = pack[rdm]
-        if (canAdd(obj, xCur, M)) # on peut ajouter l'objet
-            #println("add")
+        if (tryAdd(obj, full, M)) # on peut ajouter l'objet
             xCur[obj] = 1
             zCur += cost[obj]
             move = true
@@ -120,6 +106,11 @@ function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
             nbPacked += 1
             nbUnpacked -= 1
             pack[rdm] = tmp
+            for j=1:m
+                if M[j,obj] == 1
+                    full[j] = 1
+                end
+            end
             move = true
         else
             # on place le dernier objet selectionne a la fin du tableau
@@ -127,9 +118,13 @@ function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
             pack[nbPacked+nbUnpackedRandom] = pack[rdm]
             pack[rdm] = tmp
             nbUnpackedRandom -= 1
+            prob = prob + rap*(nbUnpacked - nbUnpackedRandom)
+            if ( rand() < prob)
+                nbUnpackedRandom = 0
+            end
         end
     end
-    # si move = false, on n'a reussi à ajouter aucun objet
+    # si move = false, on a reussi à ajouter aucun objet
     if (!move && nbPacked > 0)
         #println("drop")
         rdm = rand(1:nbPacked)
@@ -141,45 +136,15 @@ function addOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
         pack[rdm] = tmp
         nbPacked -= 1
         nbUnpacked += 1
-    end
-    return deepcopy(xCur), zCur, deepcopy(pack), nbPacked, nbUnpacked
-end
-
-function oneAddOrElseDrop(xCur, zCur, pack, nbPacked, nbUnpacked, cost, M)
-    move = false
-    if (nbUnpacked > 0)
-        rdm = rand((nbPacked+1):(nbPacked+nbUnpacked))
-        obj = pack[rdm]
-        if (canAdd(obj, xCur, M)) # on peut ajouter l'objet
-            #println("add")
-            xCur[obj] = 1
-            zCur += cost[obj]
-            # on ajoute l'objet à ceux qui sont packed
-            tmp = pack[nbPacked+1]
-            pack[nbPacked+1] = obj
-            # on met à jour la taille du pack
-            nbPacked += 1
-            nbUnpacked -= 1
-            pack[rdm] = tmp
-            move = true
+        #mise a jour de full apres le drop
+        for k=1:m
+            if M[k, obj] == 1
+                full[k] = 0
+            end
         end
     end
-    # si move = false, on n'a reussi à ajouter aucun objet
-    if (!move && nbPacked > 0)
-        #println("drop")
-        rdm = rand(1:nbPacked)
-        obj = pack[rdm]
-        xCur[obj] = 0
-        zCur -= cost[obj]
-        tmp = pack[nbPacked]
-        pack[nbPacked] = obj
-        pack[rdm] = tmp
-        nbPacked -= 1
-        nbUnpacked += 1
-    end
-    return deepcopy(xCur), zCur, deepcopy(pack), nbPacked, nbUnpacked
+    return xCur, zCur, pack, nbPacked, nbUnpacked, full
 end
-
 
 function packs(x) # crée un tableau où
     # les nbPacked 1er objets sont ceux pour lesquels x[i] = 1
@@ -199,7 +164,8 @@ function packs(x) # crée un tableau où
     return packed, nbPacked, nbUnpacked
 end
 
-function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf, optimum)
+function saMeta(x0, z0, t0, L, alpha, tmin, full, cost, M, nbRechauf,tRechauf, optimum, displayPlot)
+    deb = time()
     move=1
     cptR=0
     xCur = deepcopy(x0)
@@ -220,32 +186,31 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf, optimum
     while t > tmin
         iter += 1
         if move==1
-            newX, newZ, pack, nbPacked, nbUnpacked = addOrElseDrop(copy(xCur), copy(zCur), copy(packCur), nbPackedCur, nbUnpackedCur, cost, M)
-            #newX, newZ, pack, nbPacked, nbUnpacked =  oneAddOrElseDrop(copy(xCur), copy(zCur), copy(packCur), nbPackedCur, nbUnpackedCur, cost, M)
+            newX, newZ, newPack, nbPacked, nbUnpacked, newFull = addOrElseDrop(copy(xCur), zCur, copy(packCur), nbPackedCur, nbUnpackedCur, copy(full), cost, M)
             zPack=0
             for i in 1:nbPacked
-                zPack=zPack+cost[pack[i]]
+                zPack=zPack+cost[newPack[i]]
             end
-            #println("add...Drop : newZ = ",newZ," , nbPacked/nbUnpacked = ",nbPacked,"/",nbUnpacked,"   zPack = ",zPack)
         end
         if move==2
-            newX, newZ, pack, nbPacked, nbUnpacked = swap(copy(xCur), copy(zCur), copy(packCur), nbPackedCur, nbUnpackedCur, cost, M)
+            newX, newZ, newPack, nbPacked, nbUnpacked, newFull = swap(copy(xCur), zCur, copy(packCur), nbPackedCur, nbUnpackedCur, copy(full), cost, M)
             zPack=0
             for i in 1:nbPacked
-                zPack=zPack+cost[pack[i]]
+                zPack=zPack+cost[newPack[i]]
             end
-            #println("swap : newZ = ",newZ," , nbPacked/nbUnpacked = ",nbPacked,"/",nbUnpacked,"   zPack = ",zPack)
         end
         push!(allZ, newZ)
         delta = newZ - zCur
         if ((delta > 0) || (rand() < exp(delta/t))) #  cas (A+ ou A-)
-            packCur=deepcopy(pack)
+            packCur=newPack
             nbPackedCur=nbPacked
             nbUnpackedCur=nbUnpacked
-            xCur = deepcopy(newX)
+            xCur = newX
             zCur = newZ
+            packCur = newPack
+            full = newFull
             if (newZ > zBest) # cas A++
-                xBest = deepcopy(newX)
+                xBest = newX
                 zBest = newZ
                 cpt[1] += 1
             else
@@ -268,59 +233,42 @@ function saMeta(x0, z0, t0, L, alpha, tmin, cost, M, nbRechauf,tRechauf, optimum
         end
         plateau += 1
         if (t<tmin && cptR<nbRechauf)
-            println("réchauffe on change de mouvement !")
-            println("zBest = ",zBest)
+            println("réchauffe, on change de mouvement !")
+            vanilla = time()
+            println("zBest avant réchaud : ",zBest)
             t=tRechauf
             cptR+=1
             move=2
-            println(cpt)
         end
     end
-    #println(allZ)
+    ext = time()
     println(cpt)
-    println(allZ[1])
-    println(sum(proba)/length(proba))
-    plotSa(iter, allSolutions, bestSolutions, allTemp, optimum)
+    if (displayPlot)
+        plotSa(iter, allSolutions, bestSolutions, allTemp, optimum)
+    end
+    vanilla = vanilla - deb
+    ext = ext - deb
+    println("Time au moment du réchaud : $(vanilla), Time après le réchaud : $(ext)")
     return xBest, zBest
 end
 
-function sa(t0, L, alpha, tmin, cost, M, optimum)
-    #z, x, full, pack = construct(cost, M)
-    z, x = randomConstruct(cost, M)
+function sa(t0, L, alpha, tmin, cost, M, optimum, displayPlot)
+    z, x, full, pack = construct(cost, M)
     m, n = size(M)
-    packed = sum(x)
     println("Construction : $(z)")
     sumz = 0
     for i in 1:n
         sumz += cost[i]*x[i]
     end
-    println("Construction : $(sumz)")
     println("Nombre d'objets : $(n)")
     println("Nombre de contraintes : $(m)")
-    println("Nombre d'objets packed : $(packed)")
-    xBest, zBest = saMeta(x, z, t0, L, alpha, tmin, cost, M,1,100, optimum)
+    xBest, zBest = saMeta(x, z, t0, L, alpha, tmin, full, cost, M,1 ,floor(t0/10), optimum, displayPlot)
     sumz = 0
-    for i in 1:n
-        sumz += cost[i]*xBest[i]
-    end
-    println("SA : $(zBest)")
-    println("SA : $(sumz)")
-    packed = sum(xBest)
-    println("Nombre d'objets packed : $(packed)")
+    println("zBest après le réchaud : $(zBest)")
+    return xBest, zBest
 end
-
-function test()
-    A = [0 1 0 0; 1 0 1 0; 1 0 0 1; 1 0 0 0]
-    x = [0, 0, 0, 1]
-    println(canAdd(1, x, A))
-    println(canAdd(2, x, A))
-    println(canAdd(3, x, A))
-    println(canAdd(4, x, A))
-end
-
 
 function plotSa(iter, allSolutions, bestSolutions, allTemp, optimum)
-    println("plot")
     #Plot solutions
     figure("SaSolutions",figsize=(6,6))
     title("SA : allSolutions, bestSolutions, optimalSolution")
@@ -335,8 +283,6 @@ function plotSa(iter, allSolutions, bestSolutions, allTemp, optimum)
     plot(x, allSolutions)
     plot(x, bestSolutions)
     plot(x, y)
-
-
     #Plot temperature
     figure("SaTemperature",figsize=(6,6))
     title("SA : temperature")

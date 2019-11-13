@@ -54,7 +54,7 @@ function construct(cost, M)
 end
 
 # essaye d'ajouter l'objet toAdd dans x
-function tryAdd(toAdd, z, x , full, pack, cost, M) # return true si on peut add toAdd dans le pack
+function tryAdd(toAdd, full, M) # return true si on peut add toAdd dans le pack
     m, n= size(M)
     c= true
     k= 1
@@ -89,7 +89,7 @@ function OneOneMove(z, x , full, pack, cost, M)
         while !add && j<= n #on choisit un objet qu'on essaye d'ajouter
             toAdd= j
             if x[toAdd] == 0 && (cost[toRemove] < cost[toAdd]) #l'objet n'est pas dans le pack et il a une meilleur valeur que celui que l'on retire
-                add= tryAdd(j, z, x , full, pack, cost, M)
+                add= tryAdd(j, full, M)
             end
             j+= 1
         end
@@ -148,7 +148,7 @@ function zerone(z,x,full,pack,cost,M)
     while !add && j<= n #on choisit un objet qu'on essaye d'ajouter
         toAdd= j
         if x[toAdd] == 0  #l'objet n'est pas dans le pack
-            add= tryAdd(j, z, x , full, pack, cost, M)
+            add= tryAdd(j, full, M)
         end
         j+= 1
     end
